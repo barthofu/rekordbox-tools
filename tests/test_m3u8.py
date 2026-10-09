@@ -134,20 +134,20 @@ class M3U8Tests(unittest.TestCase):
         source = self.root / "set.m3u8"
         source.write_text("two.mp3\none.mp3\n", encoding="utf-8")
         mapping = PlaylistMapping(source, "Set")
-        models = types.ModuleType("pyrekordbox.masterdb.models")
-        models.DjmdContent = Content
-        models.DjmdPlaylist = Playlist
-        masterdb = types.ModuleType("pyrekordbox.masterdb")
-        masterdb.__path__ = []
-        masterdb.models = models
+        tables = types.ModuleType("pyrekordbox.db6.tables")
+        tables.DjmdContent = Content
+        tables.DjmdPlaylist = Playlist
+        db6 = types.ModuleType("pyrekordbox.db6")
+        db6.__path__ = []
+        db6.tables = tables
         package = types.ModuleType("pyrekordbox")
         package.__path__ = []
         with patch.dict(
             sys.modules,
             {
                 "pyrekordbox": package,
-                "pyrekordbox.masterdb": masterdb,
-                "pyrekordbox.masterdb.models": models,
+                "pyrekordbox.db6": db6,
+                "pyrekordbox.db6.tables": tables,
             },
         ):
             plan = prepare_playlists(db, [mapping])
@@ -166,20 +166,20 @@ class M3U8Tests(unittest.TestCase):
         db = FakeDatabase([content], [playlist])
         source = self.root / "set.m3u8"
         source.write_text("one.mp3\nmissing.mp3\n", encoding="utf-8")
-        models = types.ModuleType("pyrekordbox.masterdb.models")
-        models.DjmdContent = Content
-        models.DjmdPlaylist = Playlist
-        masterdb = types.ModuleType("pyrekordbox.masterdb")
-        masterdb.__path__ = []
-        masterdb.models = models
+        tables = types.ModuleType("pyrekordbox.db6.tables")
+        tables.DjmdContent = Content
+        tables.DjmdPlaylist = Playlist
+        db6 = types.ModuleType("pyrekordbox.db6")
+        db6.__path__ = []
+        db6.tables = tables
         package = types.ModuleType("pyrekordbox")
         package.__path__ = []
         with patch.dict(
             sys.modules,
             {
                 "pyrekordbox": package,
-                "pyrekordbox.masterdb": masterdb,
-                "pyrekordbox.masterdb.models": models,
+                "pyrekordbox.db6": db6,
+                "pyrekordbox.db6.tables": tables,
             },
         ):
             plan = prepare_playlists(db, [PlaylistMapping(source, "Set")])

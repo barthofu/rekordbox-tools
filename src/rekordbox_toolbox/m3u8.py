@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from pyrekordbox.masterdb.models import DjmdContent, DjmdPlaylist
+    from pyrekordbox.db6 import tables as tb
 
 _logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ class PlaylistMapping:
 class PlaylistPlan:
     mapping: PlaylistMapping
     target_exists: bool
-    tracks: list[DjmdContent]
+    tracks: list[tb.DjmdContent]
     missing: list[str]
     ambiguous: list[str]
     changed: bool
@@ -120,8 +120,8 @@ def _path_key(path: str | Path) -> str:
 
 
 def _find_playlist(
-    playlists: list[DjmdPlaylist], name: str, parent_id: str
-) -> DjmdPlaylist | None:
+    playlists: list[tb.DjmdPlaylist], name: str, parent_id: str
+) -> tb.DjmdPlaylist | None:
     matches = [
         playlist
         for playlist in playlists
@@ -134,11 +134,11 @@ def _find_playlist(
 
 
 def _resolve_target(
-    playlists: list[DjmdPlaylist], target: str
-) -> DjmdPlaylist | None:
+    playlists: list[tb.DjmdPlaylist], target: str
+) -> tb.DjmdPlaylist | None:
     parts = target.split("/")
     parent_id = "root"
-    current: DjmdPlaylist | None = None
+    current: tb.DjmdPlaylist | None = None
     for index, part in enumerate(parts):
         current = _find_playlist(playlists, part, parent_id)
         if current is None:
@@ -154,11 +154,11 @@ def _resolve_target(
 
 def prepare_playlists(db: Any, mappings: list[PlaylistMapping]) -> list[PlaylistPlan]:
     """Resolve M3U8 entries against the library without changing it."""
-    from pyrekordbox.masterdb.models import DjmdContent, DjmdPlaylist
+    from pyrekordbox.db6 import tables as tb
 
-    contents = db.query(DjmdContent).all()
-    playlists = db.query(DjmdPlaylist).all()
-    by_path: dict[str, list[DjmdContent]] = {}
+    contents = db.query(tb.DjmdContent).all()
+    playlists = db.query(tb.DjmdPlaylist).all()
+    by_path: dict[str, list[tb.DjmdContent]] = {}
     for content in contents:
         by_path.setdefault(_path_key(content.FolderPath or ""), []).append(content)
 
@@ -196,14 +196,14 @@ def prepare_playlists(db: Any, mappings: list[PlaylistMapping]) -> list[Playlist
     return plans
 
 
-def _get_or_create_target(db: Any, target: str) -> DjmdPlaylist:
-    from pyrekordbox.masterdb.models import DjmdPlaylist
+def _get_or_create_target(db: Any, target: str) -> tb.DjmdPlaylist:
+    from pyrekordbox.db6 import tables as tb
 
-    parent: DjmdPlaylist | None = None
+    parent: tb.DjmdPlaylist | None = None
     parts = target.split("/")
     for folder_name in parts[:-1]:
         parent_id = str(parent.ID) if parent is not None else "root"
-        folder = _find_playlist(db.query(DjmdPlaylist).all(), folder_name, parent_id)
+        folder = _find_playlist(db.query(tb.DjmdPlaylist).all(), folder_name, parent_id)
         if folder is None:
             folder = db.create_playlist_folder(folder_name, parent=parent)
         elif folder.Attribute != 1:
@@ -211,7 +211,7 @@ def _get_or_create_target(db: Any, target: str) -> DjmdPlaylist:
         parent = folder
 
     parent_id = str(parent.ID) if parent is not None else "root"
-    playlist = _find_playlist(db.query(DjmdPlaylist).all(), parts[-1], parent_id)
+    playlist = _find_playlist(db.query(tb.DjmdPlaylist).all(), parts[-1], parent_id)
     if playlist is None:
         playlist = db.create_playlist(parts[-1], parent=parent)
     elif playlist.Attribute != 0:
